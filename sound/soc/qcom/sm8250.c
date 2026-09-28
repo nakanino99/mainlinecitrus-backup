@@ -170,6 +170,13 @@ static int sm8250_snd_hw_params(struct snd_pcm_substream *substream,
 		}
 
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK && rx_ch_cnt) {
+    /* CITRUS: jangan kirim lebih banyak channel dari yang benar-benar
+     * dinegosiasikan untuk stream ini — rx_ch_cnt dari codec cuma
+     * mencerminkan port yang di-map statis di DT, bisa lebih besar
+     * dari channel count PCM aktual (mis. mono stream tapi DT punya
+     * 4 port RX terdaftar), yang membuat AFE menolak dgn -EINVAL. */
+			rx_ch_cnt = min_t(u32, rx_ch_cnt, params_channels(params));
+
 			dev_err(rtd->dev, "CITRUS: propagate rx_ch_cnt=%d rx_ch[0]=0x%x\n",
 				rx_ch_cnt, rx_ch[0]);
 			ret = snd_soc_dai_set_channel_map(cpu_dai, 0, NULL,
