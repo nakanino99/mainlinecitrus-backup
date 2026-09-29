@@ -1386,19 +1386,6 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
 		if (fl->cctx->vmcount) {
 			u64 src_perms = BIT(QCOM_SCM_VMID_HLOS);
 
-			{
-	struct iommu_domain *dom = iommu_get_domain_for_dev(fl->sctx->dev);
-
-	dev_info(fl->sctx->dev,
-		 "AUDIOPD: pre-assign dma_addr=%pad size=%zu vmcount=%d vmid0=%u iommu_dom=%p type=%d\n",
-		 &fl->cctx->remote_heap->dma_addr,
-		 (size_t)fl->cctx->remote_heap->size,
-		 fl->cctx->vmcount,
-		 fl->cctx->vmperms[0].vmid,
-		 dom, dom ? dom->type : -1);
-	msleep(300);
-}
-
 			err = qcom_scm_assign_mem(fl->cctx->remote_heap->dma_addr,
 							(u64)fl->cctx->remote_heap->size,
 							&src_perms,
