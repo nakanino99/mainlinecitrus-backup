@@ -763,7 +763,7 @@
 			link-name = "WCD Playback";
 
 			cpu {
-				sound-dai = <&q6afedai RX_CODEC_DMA_RX_1>;
+				sound-dai = <&q6afedai RX_CODEC_DMA_RX_0>;
 			};
 
 			platform {
