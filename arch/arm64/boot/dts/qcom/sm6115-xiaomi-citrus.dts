@@ -771,7 +771,7 @@
 			};
 
 			codec {
-				sound-dai = <&wcd937x 0>, <&rxmacro 0>;
+				sound-dai = <&wcd937x 0>, <&swr1 0>, <&rxmacro 0>;
 			};
 		};
 	};
