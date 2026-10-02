@@ -16,6 +16,7 @@ properties:
           - qcom,pmi8998-charger
           - qcom,pm660-charger
           - qcom,pm8150b-charger
+          - qcom,pmi632-charger
       - items:
           - const: qcom,pm7250b-charger
           - const: qcom,pm8150b-charger

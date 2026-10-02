@@ -415,6 +415,7 @@ struct smb_match_data;
  * @icl_step_ua:	USB input current register step
  * @icl_status:		Effective input current status register offset
  * @usbin_current_scale: USB input current-sense scale
+ * @usbin_current_div: USB input current-sense divider (0 means 1)
  * @initial_usb_suspend:	USB input suspend state before SMB5 setup
  * @initial_charge_enable: Charging enable state before hardware setup
  * @status_change_work: Worker to handle plug/unplug events
@@ -435,6 +436,7 @@ struct smb_chip {
 	unsigned int icl_step_ua;
 	u16 icl_status;
 	unsigned int usbin_current_scale;
+	unsigned int usbin_current_div;
 	u8 initial_usb_suspend;
 	u8 initial_charge_enable;
 
@@ -461,6 +463,7 @@ struct smb_match_data {
 	unsigned int icl_step_ua;
 	u16 icl_status;
 	unsigned int usbin_current_scale;
+	unsigned int usbin_current_div;
 	const struct smb_init_register *init_seq;
 };
 
@@ -748,7 +751,8 @@ static int smb_get_prop_current_now(struct smb_chip *chip, int *val)
 	if (rc < 0)
 		return rc;
 
-	current_ua = (s64)*val * chip->usbin_current_scale;
+	current_ua = div_s64((s64)*val * chip->usbin_current_scale,
+			   chip->usbin_current_div);
 	if (current_ua < INT_MIN || current_ua > INT_MAX)
 		return -ERANGE;
 
@@ -1307,6 +1311,23 @@ static const struct smb_match_data pm8150b_match_data = {
 	.usbin_current_scale = 5,
 };
 
+static const struct smb_match_data pmi632_match_data = {
+	.init_seq = smb5_init_seq,
+	.init_seq_len = ARRAY_SIZE(smb5_init_seq),
+	.name = "pmi632",
+	.gen = SMB5,
+	.fv_min_uv = 3600000,
+	.fv_max_uv = 4800000,
+	.fv_step_uv = 10000,
+	.fcc_max_ua = 3000000,
+	.fcc_step_ua = 50000,
+	.icl_max_ua = 3000000,
+	.icl_step_ua = 50000,
+	.icl_status = SMB5_AICL_ICL_STATUS,
+	.usbin_current_scale = 5,
+	.usbin_current_div = 2,
+};
+
 static int smb_init_hw(struct smb_chip *chip,
 		       const struct smb_init_register *init_seq, size_t len)
 {
@@ -1423,6 +1444,7 @@ static int smb_probe(struct platform_device *pdev)
 	chip->icl_step_ua = match_data->icl_step_ua;
 	chip->icl_status = match_data->icl_status;
 	chip->usbin_current_scale = match_data->usbin_current_scale;
+	chip->usbin_current_div = match_data->usbin_current_div ?: 1;
 
 	dev_info(chip->dev, "Generation %s\n", chip->gen == SMB2 ? "SMB2" : "SMB5");
 	if (chip->gen == SMB5) {
@@ -1529,6 +1551,7 @@ static const struct of_device_id smb_match_id_table[] = {
 	{ .compatible = "qcom,pmi8998-charger", .data = &pmi8998_match_data },
 	{ .compatible = "qcom,pm660-charger", .data = &pm660_match_data },
 	{ .compatible = "qcom,pm8150b-charger", .data = &pm8150b_match_data },
+	{ .compatible = "qcom,pmi632-charger", .data = &pmi632_match_data },
 	{ /* sentinal */ }
 };
 MODULE_DEVICE_TABLE(of, smb_match_id_table);
