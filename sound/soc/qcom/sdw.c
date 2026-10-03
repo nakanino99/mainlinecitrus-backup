@@ -211,8 +211,10 @@ int qcom_snd_sdw_hw_free(struct snd_pcm_substream *substream, bool *stream_prepa
 
 	sruntime = qcom_snd_sdw_get_stream(substream);
 	if (sruntime && *stream_prepared) {
+pr_err("CITRUS-SDW: hw_free disable_stream begin\n");
 		sdw_disable_stream(sruntime);
 		sdw_deprepare_stream(sruntime);
+pr_err("CITRUS-SDW: hw_free deprepare done\n");
 		*stream_prepared = false;
 	}
 

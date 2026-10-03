@@ -1874,6 +1874,7 @@ static void dapm_seq_check_event(struct snd_soc_card *card,
 	if (w->event && (w->event_flags & event)) {
 		int ret;
 
+pr_err("CITRUS-DAPM: %s %s\n", w->name, ev_name);
 		dapm_pop_dbg(dev, "pop test : %s %s\n", w->name, ev_name);
 		dapm_async_complete(w->dapm);
 		trace_snd_soc_dapm_widget_event_start(w, event);
