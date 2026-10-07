@@ -545,25 +545,70 @@
 		bias-pull-up;
 	};
 
-	qup_uart3_cts_rx: qup-uart3-cts-rx-state {
-		pins = "gpio8", "gpio11";
-		function = "qup3";
-		drive-strength = <2>;
-		bias-disable;
+	uart3_default: uart3-default-state {
+		cts-pins {
+			pins = "gpio8";
+			function = "qup3";
+			drive-strength = <2>;
+			bias-bus-hold;
+		};
+
+		rts-pins {
+			pins = "gpio9";
+			function = "qup3";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		tx-pins {
+			pins = "gpio10";
+			function = "qup3";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		rx-pins {
+			pins = "gpio11";
+			function = "qup3";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
 	};
 
-	qup_uart3_rts: qup-uart3-rts-state {
-		pins = "gpio9";
-		function = "qup3";
-		drive-strength = <2>;
+	uart3_sleep: uart3-sleep-state {
+		cts-pins {
+			pins = "gpio8";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-bus-hold;
+		};
+
+		rts-pins {
+			pins = "gpio9";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+
+		tx-pins {
+			pins = "gpio10";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+
+		rx-pins {
+			pins = "gpio11";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	sw_ctrl_default: sw-ctrl-default-state {
+		pins = "gpio87";
+		function = "gpio";
 		bias-pull-down;
-	};
-
-	qup_uart3_tx: qup-uart3-tx-state {
-		pins = "gpio10";
-		function = "qup3";
-		drive-strength = <2>;
-		bias-pull-up;
 	};
 };
 
@@ -668,22 +713,46 @@
 	};
 };
 
-&uart3 {
-	status = "disabled";
-	pinctrl-names = "default";
-	pinctrl-0 = <&qup_uart3_cts_rx>, <&qup_uart3_rts>, <&qup_uart3_tx>;
+/ {
+	wcn3950-pmu {
+		compatible = "qcom,wcn3950-pmu";
 
-	bluetooth {
-		compatible = "qcom,wcn3990-bt";
-		vddio-supply = <&pm6125_l16a>;
+		pinctrl-0 = <&sw_ctrl_default>;
+		pinctrl-names = "default";
+
+		vddio-supply = <&pm6125_l9a>;
 		vddxo-supply = <&pm6125_l16a>;
 		vddrf-supply = <&pm6125_l17a>;
 		vddch0-supply = <&pm6125_l23a>;
+
 		swctrl-gpios = <&tlmm 87 GPIO_ACTIVE_HIGH>;
-		max-speed = <3200000>;
-		firmware-name = "crnv21.bin";
+
+		regulators {
+			vreg_pmu_io: ldo0 { regulator-name = "vreg_pmu_io"; };
+			vreg_pmu_xo: ldo1 { regulator-name = "vreg_pmu_xo"; };
+			vreg_pmu_rf: ldo2 { regulator-name = "vreg_pmu_rf"; };
+			vreg_pmu_ch0: ldo3 { regulator-name = "vreg_pmu_ch0"; };
+			vreg_pmu_ch1: ldo4 { regulator-name = "vreg_pmu_ch1"; };
+		};
 	};
 };
+
+&uart3 {
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-1 = <&uart3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	status = "okay";
+
+	bluetooth {
+		compatible = "qcom,wcn3950-bt";
+		vddio-supply = <&vreg_pmu_io>;
+		vddxo-supply = <&vreg_pmu_xo>;
+		vddrf-supply = <&vreg_pmu_rf>;
+		vddch0-supply = <&vreg_pmu_ch0>;
+	};
+};
+
 
 &rxmacro {
 	status = "okay";
