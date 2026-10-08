@@ -417,8 +417,8 @@
 		};
 
 		pm6125_l17a: l17 {
-			regulator-min-microvolt = <1152000>;
-			regulator-max-microvolt = <1384000>;
+			regulator-min-microvolt = <1304000>;
+			regulator-max-microvolt = <1304000>;
 		};
 
 		pm6125_l18a: l18 {
