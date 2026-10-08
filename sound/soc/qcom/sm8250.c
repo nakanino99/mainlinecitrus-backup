@@ -11,6 +11,11 @@
 #include <linux/soundwire/sdw.h>
 #include <sound/jack.h>
 #include <linux/input-event-codes.h>
+#include <linux/aw873xx-pa.h>
+#include <linux/delay.h>
+#include <linux/i2c.h>
+#include <linux/of.h>
+#include <linux/string.h>
 #include "qdsp6/q6afe.h"
 #include "common.h"
 #include "usb_offload_utils.h"
@@ -26,7 +31,55 @@ struct sm8250_snd_data {
 	bool usb_offload_jack_setup;
 	struct snd_soc_jack dp_jack;
 	bool jack_setup;
+	struct i2c_client *top_amp;
+	struct i2c_client *bottom_amp;
 };
+
+static int sm8250_amp_event(struct snd_soc_dapm_widget *w,
+		struct snd_kcontrol *kcontrol, int event)
+{
+	struct sm8250_snd_data *data = snd_soc_card_get_drvdata(w->dapm->card);
+	struct i2c_client *amp;
+
+	amp = strcmp(w->name, "Top Spk Amp") ? data->bottom_amp : data->top_amp;
+	if (!amp)
+		return 0;
+
+	if (SND_SOC_DAPM_EVENT_ON(event))
+		return aw873xx_pa_set_enable(amp, true);
+
+	aw873xx_pa_set_enable(amp, false);
+	usleep_range(3000, 5000);
+	return 0;
+}
+
+static const struct snd_soc_dapm_widget sm8250_amp_widgets[] = {
+	{ .id = snd_soc_dapm_spk, .name = "Top Spk Amp", .reg = SND_SOC_NOPM,
+	  .event = sm8250_amp_event,
+	  .event_flags = SND_SOC_DAPM_POST_PMU | SND_SOC_DAPM_PRE_PMD },
+	{ .id = snd_soc_dapm_spk, .name = "Bottom Spk Amp", .reg = SND_SOC_NOPM,
+	  .event = sm8250_amp_event,
+	  .event_flags = SND_SOC_DAPM_POST_PMU | SND_SOC_DAPM_PRE_PMD },
+};
+
+static struct i2c_client *sm8250_get_amp(struct device *dev, const char *prop)
+{
+	struct device_node *np = of_parse_phandle(dev->of_node, prop, 0);
+	struct i2c_client *client;
+
+	if (!np)
+		return NULL;
+
+	client = of_find_i2c_device_by_node(np);
+	of_node_put(np);
+	if (!client || !client->dev.driver) {
+		if (client)
+			put_device(&client->dev);
+		return ERR_PTR(-EPROBE_DEFER);
+	}
+
+	return client;
+}
 
 static int sm8250_snd_init(struct snd_soc_pcm_runtime *rtd)
 {
@@ -240,6 +293,22 @@ static int sm8250_platform_probe(struct platform_device *pdev)
 	ret = qcom_snd_parse_of(card);
 	if (ret)
 		return ret;
+
+	data->top_amp = sm8250_get_amp(dev, "top-speaker-amp");
+	if (IS_ERR(data->top_amp))
+		return PTR_ERR(data->top_amp);
+	data->bottom_amp = sm8250_get_amp(dev, "bottom-speaker-amp");
+	if (IS_ERR(data->bottom_amp))
+		return PTR_ERR(data->bottom_amp);
+
+	if (data->top_amp || data->bottom_amp) {
+		card->dapm_widgets = sm8250_amp_widgets;
+		card->num_dapm_widgets = ARRAY_SIZE(sm8250_amp_widgets);
+		if (data->top_amp)
+			aw873xx_pa_set_enable(data->top_amp, false);
+		if (data->bottom_amp)
+			aw873xx_pa_set_enable(data->bottom_amp, false);
+	}
 
 	card->driver_name = of_device_get_match_data(dev);
 	sm8250_add_be_ops(card);

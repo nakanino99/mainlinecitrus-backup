@@ -29,6 +29,9 @@
 #include <linux/of.h>
 #include <linux/gpio/consumer.h>
 #include <linux/delay.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/aw873xx-pa.h>
 
 /* ---- AW87359 (earpiece/top speaker PA, no reset pin) ---- */
 static const u8 aw87359_dspk_regs[][2] = {
@@ -86,6 +89,8 @@ struct aw873xx_pa {
 	struct gpio_desc *reset_gpio; /* NULL for aw87359 */
 	const u8 (*regs)[2];
 	size_t nregs;
+	u8 on_val;
+	u8 off_val;
 };
 
 static int aw873xx_write_table(struct aw873xx_pa *pa)
@@ -121,6 +126,8 @@ static int aw873xx_probe(struct i2c_client *client)
 	if (of_device_is_compatible(client->dev.of_node, "awinic,aw87519_pa")) {
 		pa->regs = aw87519_kspk_regs;
 		pa->nregs = ARRAY_SIZE(aw87519_kspk_regs);
+		pa->on_val = 0xf0;	/* BARU */
+		pa->off_val = 0x00;	/* BARU */
 
 		/* AW87519 has a hardware reset line; AW87359 does not. */
 		pa->reset_gpio = devm_gpiod_get(&client->dev, "reset",
@@ -138,6 +145,8 @@ static int aw873xx_probe(struct i2c_client *client)
 	} else {
 		pa->regs = aw87359_dspk_regs;
 		pa->nregs = ARRAY_SIZE(aw87359_dspk_regs);
+		pa->on_val = 0x0d;	/* BARU */
+		pa->off_val = 0x04;	/* BARU */
 		pa->reset_gpio = NULL;
 	}
 
@@ -149,6 +158,26 @@ static int aw873xx_probe(struct i2c_client *client)
 		 pa->nregs);
 	return 0;
 }
+
+/* BARU: seluruh fungsi di bawah ini */
+int aw873xx_pa_set_enable(struct i2c_client *client, bool on)
+{
+	struct aw873xx_pa *pa;
+	int ret;
+
+	device_lock(&client->dev);
+	pa = i2c_get_clientdata(client);
+	if (!pa) {
+		device_unlock(&client->dev);
+		return -ENODEV;
+	}
+	ret = i2c_smbus_write_byte_data(pa->client, 0x01,
+					on ? pa->on_val : pa->off_val);
+	device_unlock(&client->dev);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(aw873xx_pa_set_enable);
 
 static const struct of_device_id aw873xx_of_match[] = {
 	{ .compatible = "awinic,aw87359_pa" },

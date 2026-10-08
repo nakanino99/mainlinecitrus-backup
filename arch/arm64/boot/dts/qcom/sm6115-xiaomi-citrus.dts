@@ -814,7 +814,11 @@
 		compatible = "qcom,sm6115-sndcard";
 		model = "Xiaomi-Poco-M3-Citrus";
 
-		audio-routing = "IN3_AUX", "AUX_OUT";
+		top-speaker-amp = <&aw87359>;
+		bottom-speaker-amp = <&aw87519>;
+		audio-routing = "IN3_AUX", "AUX_OUT",
+				"Top Spk Amp", "EAR",
+				"Bottom Spk Amp", "AUX";
 
 		mm1-dai-link {
 			link-name = "MultiMedia1";
