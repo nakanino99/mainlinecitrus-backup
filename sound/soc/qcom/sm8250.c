@@ -38,20 +38,20 @@ struct sm8250_snd_data {
 static struct i2c_client *sm8250_top_amp;
 static struct i2c_client *sm8250_bottom_amp;
 
+static void sm8250_amps_set(bool on)
+{
+	if (sm8250_top_amp)
+		aw873xx_pa_set_enable(sm8250_top_amp, on);
+	if (sm8250_bottom_amp)
+		aw873xx_pa_set_enable(sm8250_bottom_amp, on);
+	if (!on)
+		usleep_range(3000, 5000);
+}
+
 static int sm8250_amp_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
-	struct i2c_client *amp;
-
-	amp = strcmp(w->name, "Top Spk Amp") ? sm8250_bottom_amp : sm8250_top_amp;
-	if (!amp)
-		return 0;
-
-	if (SND_SOC_DAPM_EVENT_ON(event))
-		return aw873xx_pa_set_enable(amp, true);
-
-	aw873xx_pa_set_enable(amp, false);
-	usleep_range(3000, 5000);
+	sm8250_amps_set(SND_SOC_DAPM_EVENT_ON(event));
 	return 0;
 }
 
@@ -200,6 +200,10 @@ static int sm8250_snd_hw_free(struct snd_pcm_substream *substream)
 	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
 	struct sm8250_snd_data *data = snd_soc_card_get_drvdata(rtd->card);
 	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
+
+	/* switch the PAs off before SoundWire stops, to avoid pops */
+	if (cpu_dai->id == RX_CODEC_DMA_RX_0)
+		sm8250_amps_set(false);
 
 	return qcom_snd_sdw_hw_free(substream, &data->stream_prepared[cpu_dai->id]);
 }
