@@ -35,13 +35,15 @@ struct sm8250_snd_data {
 	struct i2c_client *bottom_amp;
 };
 
+static struct i2c_client *sm8250_top_amp;
+static struct i2c_client *sm8250_bottom_amp;
+
 static int sm8250_amp_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
-	struct sm8250_snd_data *data = snd_soc_card_get_drvdata(w->dapm->card);
 	struct i2c_client *amp;
 
-	amp = strcmp(w->name, "Top Spk Amp") ? data->bottom_amp : data->top_amp;
+	amp = strcmp(w->name, "Top Spk Amp") ? sm8250_bottom_amp : sm8250_top_amp;
 	if (!amp)
 		return 0;
 
@@ -300,6 +302,9 @@ static int sm8250_platform_probe(struct platform_device *pdev)
 	data->bottom_amp = sm8250_get_amp(dev, "bottom-speaker-amp");
 	if (IS_ERR(data->bottom_amp))
 		return PTR_ERR(data->bottom_amp);
+
+	sm8250_top_amp = data->top_amp;
+	sm8250_bottom_amp = data->bottom_amp;
 
 	if (data->top_amp || data->bottom_amp) {
 		card->dapm_widgets = sm8250_amp_widgets;
