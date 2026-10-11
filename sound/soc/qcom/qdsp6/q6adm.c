@@ -420,11 +420,11 @@ struct q6copp *q6adm_open(struct device *dev, int port_id, int path, int rate,
 	ret = q6adm_device_open(adm, copp, port_id, path, topology,
 				channel_mode, bit_width, rate);
 	if (ret < 0) {
-		dev_err(dev, "CITRUS-ADM: device_open FAILED ret=%d\n", ret);
+		dev_err(dev, "device_open FAILED ret=%d\n", ret);
 		kref_put(&copp->refcount, q6adm_free_copp);
 		return ERR_PTR(ret);
 	}
-	dev_err(dev, "CITRUS-ADM: device_open OK, copp_idx=%d port_id=%d topology=0x%x\n",
+	dev_dbg(dev, "CITRUS-ADM: device_open OK, copp_idx=%d port_id=%d topology=0x%x\n",
 		copp->copp_idx, port_id, topology);
 
 	return copp;

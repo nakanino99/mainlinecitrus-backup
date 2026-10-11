@@ -224,7 +224,7 @@ static int sm8250_snd_hw_params(struct snd_pcm_substream *substream,
 		if (ret == -ENOTSUPP)
 			continue;
 		if (ret < 0) {
-			dev_err(rtd->dev, "CITRUS: failed to get codec chan map: %d\n", ret);
+			dev_err(rtd->dev, "failed to get codec chan map: %d\n", ret);
 			return ret;
 		}
 
@@ -236,7 +236,7 @@ static int sm8250_snd_hw_params(struct snd_pcm_substream *substream,
      * 4 port RX terdaftar), yang membuat AFE menolak dgn -EINVAL. */
 			rx_ch_cnt = min_t(u32, rx_ch_cnt, params_channels(params));
 
-			dev_err(rtd->dev, "CITRUS: propagate rx_ch_cnt=%d rx_ch[0]=0x%x\n",
+			dev_dbg(rtd->dev, "CITRUS: propagate rx_ch_cnt=%d rx_ch[0]=0x%x\n",
 				rx_ch_cnt, rx_ch[0]);
 			ret = snd_soc_dai_set_channel_map(cpu_dai, 0, NULL,
 							  rx_ch_cnt, rx_ch);
@@ -245,7 +245,7 @@ static int sm8250_snd_hw_params(struct snd_pcm_substream *substream,
 							  tx_ch, 0, NULL);
 		}
 		if (ret < 0 && ret != -ENOTSUPP) {
-			dev_err(rtd->dev, "CITRUS: failed to set cpu chan map: %d\n", ret);
+			dev_err(rtd->dev, "failed to set cpu chan map: %d\n", ret);
 			return ret;
 		}
 	}

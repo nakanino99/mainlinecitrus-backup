@@ -41,7 +41,7 @@ static int clk_q6dsp_prepare(struct clk_hw *hw)
 
 	ret = cc->desc->lpass_set_clk(clk->dev, clk->q6dsp_clk_id, clk->attributes,
 				     Q6DSP_LPASS_CLK_ROOT_DEFAULT, clk->rate);
-	dev_err(clk->dev, "CITRUS-Q6: prepare clk_id=%d rate=%d ret=%d\n",
+	dev_dbg(clk->dev, "CITRUS-Q6: prepare clk_id=%d rate=%d ret=%d\n",
 		clk->q6dsp_clk_id, clk->rate, ret);
 	return ret;
 }
@@ -95,7 +95,7 @@ static int clk_vote_q6dsp_block(struct clk_hw *hw)
 
 	ret = cc->desc->lpass_vote_clk(clk->dev, clk->q6dsp_clk_id,
 				  clk_hw_get_name(&clk->hw), &clk->handle);
-	dev_err(clk->dev, "CITRUS-Q6: vote clk_id=%d ret=%d handle=%u\n",
+	dev_dbg(clk->dev, "CITRUS-Q6: vote clk_id=%d ret=%d handle=%u\n",
 		clk->q6dsp_clk_id, ret, clk->handle);
 	return ret;
 }

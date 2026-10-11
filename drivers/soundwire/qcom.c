@@ -738,7 +738,7 @@ static irqreturn_t qcom_swrm_irq_handler(int irq, void *dev_id)
 		       &intr_sts);
 	intr_sts_masked = intr_sts & ctrl->intr_mask;
 
-	dev_err(ctrl->dev, "CITRUS-IRQ: raw=0x%x masked=0x%x mask=0x%x\n",
+	dev_dbg(ctrl->dev, "CITRUS-IRQ: raw=0x%x masked=0x%x mask=0x%x\n",
 		intr_sts, intr_sts_masked, ctrl->intr_mask);
 
 	do {
@@ -761,14 +761,14 @@ static irqreturn_t qcom_swrm_irq_handler(int irq, void *dev_id)
 			case SWRM_INTERRUPT_STATUS_NEW_SLAVE_ATTACHED:
 			case SWRM_INTERRUPT_STATUS_CHANGE_ENUM_SLAVE_STATUS:
 				ctrl->reg_read(ctrl, SWRM_MCP_SLV_STATUS, &slave_status);
-				dev_err(ctrl->dev, "CITRUS-DEBUG: slave IRQ fired, old=0x%x new=0x%x\n",
+				dev_dbg(ctrl->dev, "CITRUS-DEBUG: slave IRQ fired, old=0x%x new=0x%x\n",
 					ctrl->slave_status, slave_status);
 				if (ctrl->slave_status == slave_status) {
-					dev_err(ctrl->dev, "CITRUS-DEBUG: SKIPPED (status unchanged)\n");
+					dev_dbg(ctrl->dev, "CITRUS-DEBUG: SKIPPED (status unchanged)\n");
 				} else {
 					qcom_swrm_get_device_status(ctrl);
 					qcom_swrm_enumerate(&ctrl->bus);
-					dev_err(ctrl->dev, "CITRUS-DEBUG: calling sdw_handle_slave_status, status[0]=%d status[1]=%d status[2]=%d status[3]=%d\n",
+					dev_dbg(ctrl->dev, "CITRUS-DEBUG: calling sdw_handle_slave_status, status[0]=%d status[1]=%d status[2]=%d status[3]=%d\n",
 						ctrl->status[0], ctrl->status[1], ctrl->status[2], ctrl->status[3]);
 					sdw_handle_slave_status(&ctrl->bus, ctrl->status);
 				}
@@ -979,7 +979,7 @@ static int qcom_swrm_init(struct qcom_swrm_ctrl *ctrl)
 
 	{
 		bool fg_ok = swrm_wait_for_frame_gen_enabled(ctrl);
-		dev_err(ctrl->dev, "CITRUS-CLK: frame_gen_enabled=%d\n", fg_ok);
+		dev_dbg(ctrl->dev, "CITRUS-CLK: frame_gen_enabled=%d\n", fg_ok);
 	}
 	ctrl->slave_status = 0;
 	ctrl->reg_read(ctrl, SWRM_COMP_PARAMS, &val);
@@ -1635,7 +1635,7 @@ static int qcom_swrm_probe(struct platform_device *pdev)
 	}
 
 	ret = clk_prepare_enable(ctrl->hclk);
-	dev_err(dev, "CITRUS-CLK: probe hclk enable ret=%d rate=%lu\n",
+	dev_dbg(dev, "CITRUS-CLK: probe hclk enable ret=%d rate=%lu\n",
 		ret, clk_get_rate(ctrl->hclk));
 
 	ctrl->dev = dev;
@@ -1709,10 +1709,10 @@ static int qcom_swrm_probe(struct platform_device *pdev)
 	}
 
 	qcom_swrm_init(ctrl);
-	dev_err(dev, "CITRUS-CLK: after qcom_swrm_init, waiting for enumeration completion\n");
+	dev_dbg(dev, "CITRUS-CLK: after qcom_swrm_init, waiting for enumeration completion\n");
 	wait_for_completion_timeout(&ctrl->enumeration,
 				    msecs_to_jiffies(TIMEOUT_MS));
-	dev_err(dev, "CITRUS-CLK: enumeration wait done (may have timed out silently)\n");
+	dev_dbg(dev, "CITRUS-CLK: enumeration wait done (may have timed out silently)\n");
 	ret = qcom_swrm_register_dais(ctrl);
 	if (ret)
 		goto err_master_add;
@@ -1756,7 +1756,7 @@ static int __maybe_unused swrm_runtime_resume(struct device *dev)
 	struct qcom_swrm_ctrl *ctrl = dev_get_drvdata(dev);
 	int ret;
 
-	dev_err(dev, "CITRUS-CLK: swrm_runtime_resume called\n");
+	dev_dbg(dev, "CITRUS-CLK: swrm_runtime_resume called\n");
 
 	if (ctrl->wake_irq > 0) {
 		if (!irqd_irq_disabled(irq_get_irq_data(ctrl->wake_irq)))
@@ -1823,7 +1823,7 @@ static int __maybe_unused swrm_runtime_suspend(struct device *dev)
 	struct qcom_swrm_ctrl *ctrl = dev_get_drvdata(dev);
 	int ret;
 
-	dev_err(dev, "CITRUS-CLK: swrm_runtime_suspend called\n");
+	dev_dbg(dev, "CITRUS-CLK: swrm_runtime_suspend called\n");
 
 	swrm_wait_for_wr_fifo_done(ctrl);
 	if (!ctrl->clock_stop_not_supported) {

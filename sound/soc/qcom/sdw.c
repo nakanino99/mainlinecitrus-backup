@@ -81,7 +81,7 @@ int qcom_snd_sdw_startup(struct snd_pcm_substream *substream)
 	for_each_rtd_codec_dais(rtd, i, codec_dai) {
 		ret = snd_soc_dai_set_stream(codec_dai, sruntime,
 					     substream->stream);
-		dev_err(rtd->dev, "CITRUS-SDW: set_stream on %s ret=%d\n",
+		dev_dbg(rtd->dev, "CITRUS-SDW: set_stream on %s ret=%d\n",
 			codec_dai->name, ret);
 		if (ret < 0 && ret != -ENOTSUPP) {
 			dev_err(rtd->dev, "Failed to set sdw stream on %s\n", codec_dai->name);
@@ -135,37 +135,37 @@ int qcom_snd_sdw_prepare(struct snd_pcm_substream *substream,
 
 
 	if (!qcom_snd_is_sdw_dai(cpu_dai->id)) {
-		dev_err(rtd->dev, "CITRUS-SDW: not sdw dai, id=%d\n", cpu_dai->id);
+		dev_dbg(rtd->dev, "CITRUS-SDW: not sdw dai, id=%d\n", cpu_dai->id);
 		return 0;
 	}
 
 	sruntime = qcom_snd_sdw_get_stream(substream);
 	if (!sruntime) {
-		dev_err(rtd->dev, "CITRUS-SDW: sruntime NULL (get_stream failed)\n");
+		dev_err(rtd->dev, "sruntime NULL (get_stream failed)\n");
 		return 0;
 	}
 
 	if (*stream_prepared) {
-		dev_err(rtd->dev, "CITRUS-SDW: already prepared, skipping\n");
+		dev_dbg(rtd->dev, "CITRUS-SDW: already prepared, skipping\n");
 		return 0;
 	}
 
-	dev_err(rtd->dev, "CITRUS-SDW: proceeding to sdw_prepare_stream\n");
+	dev_dbg(rtd->dev, "CITRUS-SDW: proceeding to sdw_prepare_stream\n");
 	ret = sdw_prepare_stream(sruntime);
 
 	if (ret) {
-		dev_err(rtd->dev, "CITRUS-SDW: sdw_prepare_stream FAILED ret=%d\n", ret);
+		dev_err(rtd->dev, "sdw_prepare_stream FAILED ret=%d\n", ret);
 		return ret;
 	}
-	dev_err(rtd->dev, "CITRUS-SDW: sdw_prepare_stream OK\n");
+	dev_dbg(rtd->dev, "CITRUS-SDW: sdw_prepare_stream OK\n");
 
 	ret = sdw_enable_stream(sruntime);
 	if (ret) {
-		dev_err(rtd->dev, "CITRUS-SDW: sdw_enable_stream FAILED ret=%d\n", ret);
+		dev_err(rtd->dev, "sdw_enable_stream FAILED ret=%d\n", ret);
 		sdw_deprepare_stream(sruntime);
 		return ret;
 	}
-	dev_err(rtd->dev, "CITRUS-SDW: sdw_enable_stream OK\n");
+	dev_dbg(rtd->dev, "CITRUS-SDW: sdw_enable_stream OK\n");
 	*stream_prepared  = true;
 
 	return ret;
@@ -211,10 +211,10 @@ int qcom_snd_sdw_hw_free(struct snd_pcm_substream *substream, bool *stream_prepa
 
 	sruntime = qcom_snd_sdw_get_stream(substream);
 	if (sruntime && *stream_prepared) {
-pr_err("CITRUS-SDW: hw_free disable_stream begin\n");
+pr_debug("CITRUS-SDW: hw_free disable_stream begin\n");
 		sdw_disable_stream(sruntime);
 		sdw_deprepare_stream(sruntime);
-pr_err("CITRUS-SDW: hw_free deprepare done\n");
+pr_debug("CITRUS-SDW: hw_free deprepare done\n");
 		*stream_prepared = false;
 	}
 
