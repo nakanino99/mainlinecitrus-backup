@@ -746,6 +746,7 @@
 
 	bluetooth {
 		compatible = "qcom,wcn3950-bt";
+		local-bd-address = [ c3 a4 6b 6f 22 22 ];
 		vddio-supply = <&vreg_pmu_io>;
 		vddxo-supply = <&vreg_pmu_xo>;
 		vddrf-supply = <&vreg_pmu_rf>;
